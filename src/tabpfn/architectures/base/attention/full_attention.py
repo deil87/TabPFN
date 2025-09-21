@@ -724,13 +724,15 @@ class MultiHeadAttention(Attention):
                 print("block mask was skipped")
               
             attention_head_outputs = flex_attention(
-                q.transpose(1, 2).to(k.device),
-                k.transpose(1, 2).to(k.device),
-                v.transpose(1, 2).to(k.device),
+                q.transpose(1, 2),
+                k.transpose(1, 2),
+                v.transpose(1, 2),
                 block_mask=block_mask,
                 # dropout_p=dropout_p,   NO DROPOUT??
                 **extra_inputs
-                ).to(k.device)
+                )
+            
+            del block_mask
             
             # attention_head_outputs = torch.nn.functional.scaled_dot_product_attention(
             #     q.transpose(1, 2).to("cpu"),
