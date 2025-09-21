@@ -715,7 +715,7 @@ class MultiHeadAttention(Attention):
                 num_blocks_q = seq_len_q // block_size
 
 
-                block_mask = create_block_mask(causal_mask, 1, 1, seq_len_q, seq_len_q, device = "cpu", BLOCK_SIZE = block_size)
+                block_mask = create_block_mask(causal_mask, 1, 1, seq_len_q, seq_len_q, device = k.device, BLOCK_SIZE = block_size)
                 
                
             print(f"Finished masking.")   
