@@ -714,6 +714,7 @@ class MultiHeadAttention(Attention):
                 
                 num_blocks_q = seq_len_q // block_size
 
+                print(f"Device: {k.device}")
 
                 block_mask = create_block_mask(causal_mask, 1, 1, seq_len_q, seq_len_q, device = k.device, BLOCK_SIZE = block_size)
                 
@@ -723,9 +724,9 @@ class MultiHeadAttention(Attention):
                 print("block mask was skipped")
               
             attention_head_outputs = flex_attention(
-                q.transpose(1, 2),
-                k.transpose(1, 2),
-                v.transpose(1, 2),
+                q.transpose(1, 2).to(k.device),
+                k.transpose(1, 2).to(k.device),
+                v.transpose(1, 2).to(k.device),
                 block_mask=block_mask,
                 # dropout_p=dropout_p,   NO DROPOUT??
                 **extra_inputs
