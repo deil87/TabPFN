@@ -47,6 +47,7 @@ class RemoveHighlyCorrelatedFeaturesStep(FeaturePreprocessingTransformerStep):
         # Transpose to treat columns as vectors: shape (n_features, n_samples)
         vectors = x_norm.T
 
+        print(f"Dimensionality of data for correlation removal: {vectors.shape}, Shape of X: {X.shape}")
         d = vectors.shape[1]
         
         sel_ = [True] * vectors.shape[0]
