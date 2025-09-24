@@ -42,12 +42,16 @@ class RemoveHighlyCorrelatedFeaturesStep(FeaturePreprocessingTransformerStep):
         if isinstance(X, torch.Tensor):
             x_norm = F.normalize(X, p=2, dim=0).numpy() 
         else:
-            x_norm = np.linalg.norm(X, axis=0)
+            def normalize_np(X, axis=0, p=2, eps=1e-12):
+                norm = np.linalg.norm(X, ord=p, axis=axis, keepdims=True)
+                norm = np.maximum(norm, eps)  # prevent division by zero
+                return X / norm
+            x_norm = normalize_np(X, axis=0)
         
         # Transpose to treat columns as vectors: shape (n_features, n_samples)
         vectors = x_norm.T
 
-        print(f"Dimensionality of data for correlation removal: {vectors.shape}, Shape of X: {X.shape}")
+        # print(f"Dimensionality of data for correlation removal: {vectors.shape}, Shape of X: {X.shape}")
         d = vectors.shape[1]
         
         sel_ = [True] * vectors.shape[0]
