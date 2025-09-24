@@ -34,6 +34,7 @@ from tabpfn.preprocessors import (
     NanHandlingPolynomialFeaturesStep,
     RemoveConstantFeaturesStep,
     ReshapeFeatureDistributionsStep,
+    RemoveHighlyCorrelatedFeaturesStep,
     SequentialFeatureTransformer,
     ShuffleFeaturesStep,
 )
@@ -574,6 +575,11 @@ class EnsembleConfig:
                 shuffle_method=self.feature_shift_decoder,
                 shuffle_index=self.feature_shift_count,
                 random_state=random_state,
+            ),
+        )
+        steps.append(
+            RemoveHighlyCorrelatedFeaturesStep(
+                threshold=0.9
             ),
         )
         return SequentialFeatureTransformer(steps)
