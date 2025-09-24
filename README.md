@@ -1,3 +1,71 @@
+# Fork from official TabPFN
+
+## Mission
+I see TabPFN as a cross between AutoML, Transformer-based models and the concept of pre-trained Foundational models.
+The goal is to contribute to the original project by exploring different ways to improve performance and automation.
+
+## New featutes
+Here is the list of improvements/features that are not yet present in the original repo but are introduced here:
+
+### RemoveHighlyCorrelatedFeaturesStep
+
+##### Theoretical considerations:
+
+  Does inner product between normalized vectors approximates correlations between vectors?
+  Yes, the inner product between normalized vectors approximates the correlation between those vectors.
+
+  Explanation:
+  - The correlation coefficient between two random variables or vectors is defined as the covariance divided by the product of their standard deviations.
+  - The covariance can be interpreted as an inner product of the centered (mean-subtracted) vectors.
+  - When vectors are normalized (typically meaning they are centered by subtracting their mean and scaled to have unit norm), their inner product equals the cosine of the angle between them, which corresponds exactly to the Pearson correlation coefficient.
+  - Thus, the inner product of normalized vectors is mathematically equivalent to the correlation coefficient, serving as a measure of similarity or correlation.
+
+  In summary, normalized vectors' inner product is a direct measure of their correlation, with values ranging from -1 to 1 representing perfect negative to perfect positive correlation, respectively.
+
+
+##### Further improvements:
+  - faiss-gpu can be used if installed dynamically based on environment
+  - use approximate nearest neighbor search instead of exact ( see https://github.com/facebookresearch/faiss/wiki/Faiss-indexes )
+  - introduce support for categorical features ( eg. Chi-square test based removal )
+  - add parameter to choose which feature to keep among correlated ones (currently first one is kept) 
+  - check whether highly negative correlations are handled as well
+
+
+## Roadmap
+
+During the discussion with the Team on 22 of September 2025 I shared the following ideas of how TabPFN can be improved:
+
+These are high-level ideas/directions to take:
+
+### Feature engineering/selection
+
+- balancing dataset ( undersampling / oversampling ). Smote? Or we also can use synthetic generation that we are using during prior pretraining phase. Also can use Structured Networks. How weights can be incorporated?
+- MICE (Multiple Imputation by Chained Equations) is an advanced missing data imputation method that iteratively models. We can again leverage fast traning/prediction times of TabPFN to impute iteratively efficiently. This is not like using other classical ( and slow models to help with data preprocessing )
+- feature selection ( PCA, Lasso, tree-based importance based selection). Wrapper Methods: Techniques such as Recursive Feature Elimination (RFE), permutation importance, and target permutation selection. Removing low-variance features, univariate statistical tests (e.g., correlation with the target), and pairwise feature correlations to remove redundant features before modeling.
+- feature engineering ( generating interaction based features )
+- Spline tranformers. Especially for cyclic (hour of a day) and geographical features.
+- Categorical encoding, frequency encoding and target encoding.
+
+
+### Validation
+- integrated cross-validation ( helps with unbiased evaluation especially for small datasets). Better model selection. Helps with hyper-parameter search.
+
+### Scalability
+- Data, Model/Pipeline parallelization
+- see alos Model section for ensembling
+
+### Monitoring
+- TabPFN does not support online learning in the typical sense of incremental or continual model updates with streaming data.
+
+### Model
+- Fine tuning. Fine-tuning with provided dataset - performing prior learning based on similar to the input dataset data.
+- Ensembling not only based only different architecture variants but also based on samples of data in case we have more than 10K rows.
+
+### Issues or features
+- I have seen cases in attention layer that seq_len_q is 285 and seq_len_k is 284
+- prepared a plot based on benchmark for different size of the input data. Exponential growth.
+
+
 # TabPFN
 
 [![PyPI version](https://badge.fury.io/py/tabpfn.svg)](https://badge.fury.io/py/tabpfn)

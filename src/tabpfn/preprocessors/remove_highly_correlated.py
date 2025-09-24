@@ -89,4 +89,6 @@ class RemoveHighlyCorrelatedFeaturesStep(FeaturePreprocessingTransformerStep):
         self, X: np.ndarray | torch.Tensor, *, is_test: bool = False
     ) -> np.ndarray:
         assert self.sel_ is not None, "You must call fit first"
-        return X[:, self.sel_]
+        X_transformed = X[:, self.sel_]
+        print(f"Reduced from {X.shape[1]} to {X_transformed.shape[1]} features")
+        return X_transformed
