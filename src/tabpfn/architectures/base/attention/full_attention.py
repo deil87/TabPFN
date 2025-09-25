@@ -740,10 +740,10 @@ class MultiHeadAttention(Attention):
             k_cont = k.transpose(1, 2).contiguous()
             v_cont = v.transpose(1, 2).contiguous()
             
-            print("Using torch scaled dot product attention")
-            print(f"q_cont shape: {q_cont.shape}")
-            print(f"k_cont shape: {k_cont.shape}")
-            print(f"v_cont shape: {v_cont.shape}")
+            # print("Using torch scaled dot product attention")
+            # print(f"q_cont shape: {q_cont.shape}")
+            # print(f"k_cont shape: {k_cont.shape}")
+            # print(f"v_cont shape: {v_cont.shape}")
             if torch.backends.mps.is_available():
                 print("MPS Memory currently allocated (bytes): before scaled_dot_product_attention", torch.mps.current_allocated_memory())
                 print("MPS Total allocated memory by driver (bytes): before scaled_dot_product_attention", torch.mps.driver_allocated_memory())

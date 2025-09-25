@@ -613,9 +613,11 @@ class PerFeatureTransformer(Architecture):
             prev_tensors = current_tensors
             prev_others = current_others
             
-
-        dummy_tensor = torch.randint(0, 10, (50000, 100))
-        list_all_objects_memorize()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+        # list_all_objects_memorize()
         
         encoder_out = self.transformer_encoder(
             (
@@ -626,14 +628,19 @@ class PerFeatureTransformer(Architecture):
             single_eval_pos=single_eval_pos,
             cache_trainset_representation=self.cache_trainset_representation,
         )  # b s f+1 e -> b s f+1 e
-        if torch.backends.mps.is_available():
-                    print(f"MPS Memory currently allocated (bytes): after transformer_encoder : { torch.mps.current_allocated_memory() / (1024**2):.2f} MB")
-                    print(f"MPS Total allocated memory by driver (bytes): after transformer_encoder: { torch.mps.driver_allocated_memory() / (1024**2):.2f} MB")
-                    print(f"MPS Total cache allocated memory by driver (bytes): after transformer_encoder: { (torch.mps.driver_allocated_memory() - torch.mps.current_allocated_memory() ) / (1024**2):.2f} MB")
-                    torch.mps.empty_cache()
-                    print(f"MPS Total cache allocated memory by driver (bytes): after transformer_encoder: { (torch.mps.driver_allocated_memory() - torch.mps.current_allocated_memory() ) / (1024**2):.2f} MB")
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+            
+        # if torch.backends.mps.is_available():
+        #             print(f"MPS Memory currently allocated (bytes): after transformer_encoder : { torch.mps.current_allocated_memory() / (1024**2):.2f} MB")
+        #             print(f"MPS Total allocated memory by driver (bytes): after transformer_encoder: { torch.mps.driver_allocated_memory() / (1024**2):.2f} MB")
+        #             print(f"MPS Total cache allocated memory by driver (bytes): after transformer_encoder: { (torch.mps.driver_allocated_memory() - torch.mps.current_allocated_memory() ) / (1024**2):.2f} MB")
+        #             torch.mps.empty_cache()
+        #             print(f"MPS Total cache allocated memory by driver (bytes): after transformer_encoder: { (torch.mps.driver_allocated_memory() - torch.mps.current_allocated_memory() ) / (1024**2):.2f} MB")
 
-        list_all_objects_memorize()
+        # list_all_objects_memorize()
 
         # If we are using a decoder
         if self.transformer_decoder:
