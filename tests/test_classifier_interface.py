@@ -227,7 +227,7 @@ def test_predict_logits_and_consistency(
         # match the probabilities from predict_proba.
         proba_from_logits = torch.nn.functional.softmax(
             torch.from_numpy(logits), dim=-1
-        ).numpy()
+        ).detach().cpu().numpy()
         np.testing.assert_allclose(
             proba_from_logits,
             proba_from_predict_proba,

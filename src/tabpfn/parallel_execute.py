@@ -55,6 +55,7 @@ def parallel_execute(
     """
     if len(devices) == 1:
         # If we only have one device then just use the current thread to avoid overhead.
+        print("Only one device detected. Executing in the current thread.")
         yield from _execute_in_current_thread(devices[0], functions)
     else:
         yield from _execute_with_multithreading(devices, functions)

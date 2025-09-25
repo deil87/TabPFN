@@ -746,6 +746,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         ).float()
 
         # Create the inference engine
+        print("Creating inference engine...in fit")
         self.executor_ = create_inference_engine(
             X_train=X,
             y_train=y,
@@ -862,12 +863,20 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
         X = fix_dtypes(X, cat_indices=self.inferred_categorical_indices_)
         X = process_text_na_dataframe(X, ord_encoder=self.preprocessor_)  # type: ignore
 
+        if torch.backends.mps.is_available():
+            print("MPS Memory currently allocated before FORWARD (bytes):", torch.mps.current_allocated_memory())
+            print("MPS Total allocated memory by driver before FORWARD (bytes):", torch.mps.driver_allocated_memory())
+
         # Runs over iteration engine
         (
             _,
             outputs,  # list of tensors [N_est, N_samples, N_borders] (after forward)
             borders,  # list of numpy arrays containing borders for each estimator
         ) = self.forward(X, use_inference_mode=True)
+        
+        if torch.backends.mps.is_available():
+            print("MPS Memory currently allocated after FORWARD (bytes):", torch.mps.current_allocated_memory())
+            print("MPS Total allocated memory by driver after FORWARD (bytes):", torch.mps.driver_allocated_memory())
 
         # --- Translate probs, average, get final logits ---
         transformed_logits = [
@@ -990,7 +999,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
 
         check_is_fitted(self)
 
-        std_borders = self.znorm_space_bardist_.borders.cpu().numpy()
+        std_borders = self.znorm_space_bardist_.borders.detach().cpu().numpy()
         outputs: list[torch.Tensor] = []
         borders: list[np.ndarray] = []
 
@@ -1000,6 +1009,10 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
             devices=self.devices_,
             autocast=self.use_autocast_,
         ):
+            if torch.backends.mps.is_available():
+                print("MPS Memory currently allocated (bytes): iter_outputs :", torch.mps.current_allocated_memory())
+                print("MPS Total allocated memory by driver (bytes): iter_outputs:", torch.mps.driver_allocated_memory())
+
             if self.softmax_temperature != 1:
                 output = output.float() / self.softmax_temperature  # noqa: PLW2901
 
@@ -1135,7 +1148,7 @@ def _logits_to_output(
 ) -> np.ndarray | list[np.ndarray]:
     """Converts raw model logits to the desired prediction format."""
     if output_type == "quantiles":
-        return [criterion.icdf(logits, q).cpu().detach().numpy() for q in quantiles]
+        return [criterion.icdf(logits, q).detach().cpu().numpy() for q in quantiles]
 
     # TODO: support
     #   "pi": criterion.pi(logits, np.max(self.y)),
@@ -1149,4 +1162,4 @@ def _logits_to_output(
     else:
         raise ValueError(f"Invalid output type: {output_type}")
 
-    return output.cpu().detach().numpy()
+    return output.detach().cpu().numpy()

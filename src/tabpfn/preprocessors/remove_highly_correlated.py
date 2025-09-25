@@ -40,7 +40,7 @@ class RemoveHighlyCorrelatedFeaturesStep(FeaturePreprocessingTransformerStep):
         x_norm = None
         
         if isinstance(X, torch.Tensor):
-            x_norm = F.normalize(X, p=2, dim=0).numpy() 
+            x_norm = F.normalize(X, p=2, dim=0).detach().cpu().numpy() 
         else:
             def normalize_np(X, axis=0, p=2, eps=1e-12):
                 norm = np.linalg.norm(X, ord=p, axis=axis, keepdims=True)

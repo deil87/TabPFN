@@ -27,6 +27,11 @@ from tabpfn.architectures.interface import Architecture
 if TYPE_CHECKING:
     from tabpfn.architectures.base.config import ModelConfig
 
+import gc
+import sys
+# Store a map from tensor id to info from previous call
+prev_tensors = {}
+prev_others = {}
 
 @contextmanager
 def isolate_torch_rng(seed: int, device: torch.device) -> Generator[None, None, None]:
@@ -545,7 +550,73 @@ class PerFeatureTransformer(Architecture):
                 f"{torch.isnan(embedded_x).any()=} | {torch.isnan(embedded_y).any()=}",
             )
         del embedded_y, embedded_x
+        
+        if torch.backends.mps.is_available():
+                    print("MPS Memory currently allocated (bytes): before transformer_encoder :", torch.mps.current_allocated_memory())
+                    print("MPS Total allocated memory by driver (bytes): before transformer_encoder:", torch.mps.driver_allocated_memory())
+ 
+        
 
+        def list_all_objects_memorize():
+            global prev_tensors, prev_others
+            current_tensors = {}
+            current_others = {}
+            total_tensor_mem = 0
+            total_other_mem = 0
+
+            print("Current Tensors:")
+            for obj in gc.get_objects():
+                try:
+                    if torch.is_tensor(obj):
+                        tid = id(obj)
+                        size_mb = obj.element_size() * obj.nelement() / (1024**2)
+                        device = obj.device
+                        dtype = obj.dtype
+                        current_tensors[tid] = (size_mb, device, dtype)
+                        if tid in prev_tensors:
+                            mark = "*** PERSISTING ***"
+                        else:
+                            mark = ""
+                        print(f"Tensor id={tid} size={obj.size()} {size_mb:.2f} MB device={device} dtype={dtype} {mark}")
+                        total_tensor_mem += obj.element_size() * obj.nelement()
+                    else:
+                        # For other objects, estimate size, ignore very small objects for clarity
+                        obj_id = id(obj)
+                        size_bytes = sys.getsizeof(obj)
+                        if size_bytes > 1024:  # filter very small objects
+                            current_others[obj_id] = size_bytes
+                            mark = "*** PERSISTING ***" if obj_id in prev_others else ""
+                            # print(f"Object id={obj_id} type={type(obj)} size={size_bytes / 1024:.2f} KB {mark}")
+                            total_other_mem += size_bytes
+                except Exception:
+                    pass
+
+            # Track disappeared tensors
+            gone_tensors = set(prev_tensors) - set(current_tensors)
+            if gone_tensors:
+                print("\nTensors no longer detected since last call:")
+                for tid in gone_tensors:
+                    size_mb, device, dtype = prev_tensors[tid]
+                    print(f"Tensor id={tid} size~={size_mb:.2f} MB device={device} dtype={dtype}")
+
+            # Track disappeared other objects
+            gone_others = set(prev_others) - set(current_others)
+            if gone_others:
+                print("\nObjects no longer detected since last call:")
+                for oid in gone_others:
+                    size_bytes = prev_others[oid]
+                    print(f"Object id={oid} size~={size_bytes / 1024:.2f} KB")
+
+            print(f"\nTotal tensor memory: {total_tensor_mem / (1024**2):.2f} MB")
+            print(f"Total other objects memory (approx): {total_other_mem / (1024**2):.2f} MB")
+
+            prev_tensors = current_tensors
+            prev_others = current_others
+            
+
+        dummy_tensor = torch.randint(0, 10, (50000, 100))
+        list_all_objects_memorize()
+        
         encoder_out = self.transformer_encoder(
             (
                 embedded_input
@@ -555,6 +626,14 @@ class PerFeatureTransformer(Architecture):
             single_eval_pos=single_eval_pos,
             cache_trainset_representation=self.cache_trainset_representation,
         )  # b s f+1 e -> b s f+1 e
+        if torch.backends.mps.is_available():
+                    print(f"MPS Memory currently allocated (bytes): after transformer_encoder : { torch.mps.current_allocated_memory() / (1024**2):.2f} MB")
+                    print(f"MPS Total allocated memory by driver (bytes): after transformer_encoder: { torch.mps.driver_allocated_memory() / (1024**2):.2f} MB")
+                    print(f"MPS Total cache allocated memory by driver (bytes): after transformer_encoder: { (torch.mps.driver_allocated_memory() - torch.mps.current_allocated_memory() ) / (1024**2):.2f} MB")
+                    torch.mps.empty_cache()
+                    print(f"MPS Total cache allocated memory by driver (bytes): after transformer_encoder: { (torch.mps.driver_allocated_memory() - torch.mps.current_allocated_memory() ) / (1024**2):.2f} MB")
+
+        list_all_objects_memorize()
 
         # If we are using a decoder
         if self.transformer_decoder:

@@ -10,7 +10,7 @@ from typing_extensions import override
 
 import numpy as np
 from torch.nn.attention.flex_attention import flex_attention, create_block_mask, BlockMask
-
+import time
 
 import torch
 from torch.utils.checkpoint import checkpoint
@@ -688,6 +688,7 @@ class MultiHeadAttention(Attention):
             if USE_TORCH_2_GQA:
                 extra_inputs["enable_gqa"] = True
             else:
+                print(f"share_kv_across_n_heads: {share_kv_across_n_heads}")
                 k = MultiHeadAttention.broadcast_kv_across_heads(
                     k,
                     share_kv_across_n_heads,
@@ -733,15 +734,46 @@ class MultiHeadAttention(Attention):
             #     )
             
             # del block_mask
+            # print("Using torch scaled dot product attention")
+            # print(f"extra_inputs: {extra_inputs}")
+            q_cont = q.transpose(1, 2).contiguous()
+            k_cont = k.transpose(1, 2).contiguous()
+            v_cont = v.transpose(1, 2).contiguous()
             
+            print("Using torch scaled dot product attention")
+            print(f"q_cont shape: {q_cont.shape}")
+            print(f"k_cont shape: {k_cont.shape}")
+            print(f"v_cont shape: {v_cont.shape}")
+            if torch.backends.mps.is_available():
+                print("MPS Memory currently allocated (bytes): before scaled_dot_product_attention", torch.mps.current_allocated_memory())
+                print("MPS Total allocated memory by driver (bytes): before scaled_dot_product_attention", torch.mps.driver_allocated_memory())
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            elif torch.backends.mps.is_available():
+                torch.mps.empty_cache()
+                
+            start = time.perf_counter()
             attention_head_outputs = torch.nn.functional.scaled_dot_product_attention(
-                q.transpose(1, 2),
-                k.transpose(1, 2),
-                v.transpose(1, 2),
+                q_cont,
+                k_cont,
+                v_cont,
                 # attn_mask=attn_mask,
                 dropout_p=dropout_p,
                 **extra_inputs,
-            ).to(k.device)
+            )
+            end = time.perf_counter()
+            print(f"Elapsed time: {end - start:.6f} seconds")
+            if torch.backends.mps.is_available():
+                print("MPS Memory currently allocated (bytes): finished", torch.mps.current_allocated_memory())
+                print("MPS Total allocated memory by driver (bytes): finished", torch.mps.driver_allocated_memory())
+            #.to(k.device)
+            
+            del q_cont, k_cont, v_cont
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            elif torch.backends.mps.is_available():
+                torch.mps.empty_cache()
+            
             attention_head_outputs = attention_head_outputs.transpose(1, 2)
         else:
             k = MultiHeadAttention.broadcast_kv_across_heads(k, share_kv_across_n_heads)

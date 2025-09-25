@@ -114,7 +114,7 @@ def get_embeddings(
         embed = output_dict[selected_data].squeeze(1)
         assert isinstance(config, (ClassifierEnsembleConfig, RegressorEnsembleConfig))
         assert embed.ndim == 2
-        embeddings.append(embed.squeeze().cpu().numpy())
+        embeddings.append(embed.squeeze().detach().cpu().numpy())
 
     return np.array(embeddings)
 
@@ -455,20 +455,20 @@ def validate_Xy_fit(
         assert len(X.shape) == 2
         estimator.n_features_in_ = X.shape[1]
 
-    if X.shape[1] > max_num_features and not ignore_pretraining_limits:
-        raise ValueError(
-            f"Number of features {X.shape[1]} in the input data is greater than "
-            f"the maximum number of features {max_num_features} officially "
-            "supported by the TabPFN model. Set `ignore_pretraining_limits=True` "
-            "to override this error!",
-        )
-    if X.shape[0] > max_num_samples and not ignore_pretraining_limits:
-        raise ValueError(
-            f"Number of samples {X.shape[0]} in the input data is greater than "
-            f"the maximum number of samples {max_num_samples} officially supported"
-            f" by TabPFN. Set `ignore_pretraining_limits=True` to override this "
-            f"error!",
-        )
+    # if X.shape[1] > max_num_features and not ignore_pretraining_limits:
+    #     raise ValueError(
+    #         f"Number of features {X.shape[1]} in the input data is greater than "
+    #         f"the maximum number of features {max_num_features} officially "
+    #         "supported by the TabPFN model. Set `ignore_pretraining_limits=True` "
+    #         "to override this error!",
+    #     )
+    # if X.shape[0] > max_num_samples and not ignore_pretraining_limits:
+    #     raise ValueError(
+    #         f"Number of samples {X.shape[0]} in the input data is greater than "
+    #         f"the maximum number of samples {max_num_samples} officially supported"
+    #         f" by TabPFN. Set `ignore_pretraining_limits=True` to override this "
+    #         f"error!",
+    #     )
 
     if is_classifier(estimator) and not estimator.differentiable_input:
         check_classification_targets(y)

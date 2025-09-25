@@ -8,6 +8,7 @@ using the diabetes dataset from scikit-learn.
 from sklearn.datasets import load_diabetes
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
+import numpy as np
 
 from tabpfn import TabPFNRegressor
 
@@ -20,8 +21,25 @@ X_train, X_test, y_train, y_test = train_test_split(
     random_state=42,
 )
 
+# Desired upsample size
+upsample_size = 107000
+
+# Number of samples in training set
+n_samples = X_train.shape[0]
+
+# Randomly sample indices with replacement
+upsample_indices = np.random.choice(n_samples, size=upsample_size, replace=True)
+
+# Create upsampled training data
+X_train = X_train[upsample_indices]
+y_train = y_train[upsample_indices]
+
+print(f"Original training size: {n_samples}")
+print(f"Upsampled training size: {y_train.shape[0]}")
+
 # Initialize a regressor
-reg = TabPFNRegressor()
+# reg = TabPFNRegressor(n_estimators=8, device="cpu",ignore_pretraining_limits=False, random_state= 42)  # Use CPU
+reg = TabPFNRegressor(n_estimators=8, ignore_pretraining_limits=False, random_state= 42)
 reg.fit(X_train, y_train)
 
 # Predict a point estimate (using the mean)
@@ -31,14 +49,14 @@ print("Mean Absolute Error (MAE):", mean_absolute_error(y_test, predictions))
 print("R-squared (R^2):", r2_score(y_test, predictions))
 
 # Predict quantiles
-quantiles = [0.25, 0.5, 0.75]
-quantile_predictions = reg.predict(
-    X_test,
-    output_type="quantiles",
-    quantiles=quantiles,
-)
-for q, q_pred in zip(quantiles, quantile_predictions):
-    print(f"Quantile {q} MAE:", mean_absolute_error(y_test, q_pred))
-# Predict with mode
-mode_predictions = reg.predict(X_test, output_type="mode")
-print("Mode MAE:", mean_absolute_error(y_test, mode_predictions))
+# quantiles = [0.25, 0.5, 0.75]
+# quantile_predictions = reg.predict(
+#     X_test,
+#     output_type="quantiles",
+#     quantiles=quantiles,
+# )
+# for q, q_pred in zip(quantiles, quantile_predictions):
+#     print(f"Quantile {q} MAE:", mean_absolute_error(y_test, q_pred))
+# # Predict with mode
+# mode_predictions = reg.predict(X_test, output_type="mode")
+# print("Mode MAE:", mean_absolute_error(y_test, mode_predictions))

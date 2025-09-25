@@ -199,6 +199,7 @@ class InferenceEngineOnDemand(InferenceEngine):
         autocast: bool,
         only_return_standard_out: bool = True,
     ) -> Iterator[tuple[torch.Tensor | dict, EnsembleConfig]]:
+        print(f"Iter_outputs 2")
         rng = np.random.default_rng(self.static_seed)
         itr = fit_preprocessing(
             configs=self.ensemble_configs,
@@ -352,6 +353,7 @@ class InferenceEngineBatchedNoPreprocessing(InferenceEngine):
     ) -> Iterator[tuple[torch.Tensor | dict, EnsembleConfig]]:
         # This engine currently only supports one device, so just take the first.
         device = devices[0]
+        print(f"Iter_outputs 3")
 
         self.model = self.model.to(device)
         ensemble_size = len(self.X_trains)
@@ -364,9 +366,11 @@ class InferenceEngineBatchedNoPreprocessing(InferenceEngine):
                 train_x_full = train_x_full.type(self.force_inference_dtype)
                 train_y_batch = train_y_batch.type(self.force_inference_dtype)  # type: ignore
 
+            print(f"Outside with", flush=True)
             with (
                 torch.autocast(device.type, enabled=autocast),
                 torch.inference_mode(self.inference_mode),
+                torch.no_grad()
             ):
                 output = self.model(
                     train_x_full.transpose(0, 1),
@@ -455,6 +459,7 @@ class InferenceEngineCachePreprocessing(InferenceEngine):
             parallel_mode="block",
         )
         configs, preprocessors, X_trains, y_trains, cat_ixs = list(zip(*itr))
+        print( f"Fitted {len(configs)} preprocessors for caching. No preprocessing: {no_preprocessing}")
         return InferenceEngineCachePreprocessing(
             X_trains=X_trains,
             y_trains=y_trains,
@@ -478,6 +483,7 @@ class InferenceEngineCachePreprocessing(InferenceEngine):
         autocast: bool,
         only_return_standard_out: bool = True,
     ) -> Iterator[tuple[torch.Tensor | dict, EnsembleConfig]]:
+        print(f"Iter_outputs 4")
         if self.force_inference_dtype is not None:
             self.model.type(self.force_inference_dtype)
 
@@ -502,8 +508,11 @@ class InferenceEngineCachePreprocessing(InferenceEngine):
                 self.X_trains, X_tests, self.y_trains, self.cat_ixs
             )
         )
+        print(f"parallel_execute: Running inference on ensemble members.")
         outputs = parallel_execute(devices, model_forward_functions)
-
+        print(f"parallel_execute: Completed inference on ensemble members.")
+        del model_forward_functions
+        
         for output, config in zip(outputs, self.ensemble_configs):
             yield _move_and_squeeze_output(output, devices[0]), config
 
@@ -529,6 +538,7 @@ class InferenceEngineCachePreprocessing(InferenceEngine):
         """
         # If several estimators are being run in parallel, then each thread needs its
         # own copy of the model so it can move it to its device.
+        # print(f"Calling model on device {device}, is_parallel={is_parallel}")
         model = deepcopy(self.model) if is_parallel else self.model
         model.to(device)
 
@@ -538,6 +548,7 @@ class InferenceEngineCachePreprocessing(InferenceEngine):
         batched_cat_ix = [cat_ix]
 
         if self.inference_mode:
+            print("Using torch.inference_mode for inference.")
             MemoryUsageEstimator.reset_peak_memory_if_required(
                 save_peak_mem=self.save_peak_mem,
                 model=model,
@@ -552,12 +563,21 @@ class InferenceEngineCachePreprocessing(InferenceEngine):
             get_autocast_context(device, enabled=autocast),
             torch.inference_mode(self.inference_mode),
         ):
-            return model(
+            if torch.backends.mps.is_available():
+                    print("MPS Memory currently allocated (bytes): before self.model() :", torch.mps.current_allocated_memory())
+                    print("MPS Total allocated memory by driver (bytes): before self.model():", torch.mps.driver_allocated_memory())
+ 
+            output = model(
                 X_full,
                 y_train,
                 only_return_standard_out=only_return_standard_out,
                 categorical_inds=batched_cat_ix,
             )
+            if torch.backends.mps.is_available():
+                    print("MPS Memory currently allocated (bytes): after self.model() :", torch.mps.current_allocated_memory())
+                    print("MPS Total allocated memory by driver (bytes): after self.model():", torch.mps.driver_allocated_memory())
+                
+            return output
 
     @override
     def use_torch_inference_mode(self, *, use_inference: bool) -> None:
@@ -689,6 +709,7 @@ class InferenceEngineCacheKV(InferenceEngine):
         autocast: bool,
         only_return_standard_out: bool = True,
     ) -> Iterator[tuple[torch.Tensor | dict, EnsembleConfig]]:
+        print(f"Iter_outputs 5")
         # This engine currently only supports one device, so just take the first.
         device = devices[0]
 
