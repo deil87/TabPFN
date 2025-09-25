@@ -11,6 +11,8 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 
 from tabpfn import TabPFNRegressor
+from tabpfn.config import ModelInterfaceConfig
+from tabpfn.preprocessing import PreprocessorConfig
 
 # Load data
 X, y = load_diabetes(return_X_y=True)
@@ -37,9 +39,25 @@ y_train = y_train[upsample_indices]
 print(f"Original training size: {n_samples}")
 print(f"Upsampled training size: {y_train.shape[0]}")
 
+preprocessing_configs = [
+        PreprocessorConfig(
+            "quantile_uni",
+            append_original="auto",
+            categorical_name="ordinal_very_common_categories_shuffled",
+            global_transformer_name="svd",
+            remove_higly_correlated = True
+        ),
+        PreprocessorConfig("safepower", categorical_name="onehot", remove_higly_correlated = True),
+    ]
+
+config_dict = {
+    "PREPROCESS_TRANSFORMS": preprocessing_configs
+               }
+inference_config= ModelInterfaceConfig.from_user_input(inference_config=config_dict)
+
 # Initialize a regressor
 # reg = TabPFNRegressor(n_estimators=8, device="cpu",ignore_pretraining_limits=False, random_state= 42)  # Use CPU
-reg = TabPFNRegressor(n_estimators=8, ignore_pretraining_limits=False, random_state= 42)
+reg = TabPFNRegressor(n_estimators=8, ignore_pretraining_limits=False, random_state= 42, inference_config=inference_config)
 reg.fit(X_train, y_train)
 
 # Predict a point estimate (using the mean)
