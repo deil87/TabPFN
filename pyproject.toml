@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tabpfn"
+name = "tabpfn_ext"
 version = "2.2.1"
 dependencies = [
   "torch>=2.1,<3",
@@ -69,7 +69,7 @@ license = { file = "LICENSE" }
 
 [project.urls]
 documentation = "https://priorlabs.ai/docs"
-source = "https://github.com/priorlabs/tabpfn"
+source = "https://github.com/deil87/TabPFN"
 
 [project.optional-dependencies]
 dev = [
