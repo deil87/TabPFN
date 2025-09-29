@@ -8,6 +8,10 @@ from functools import partial
 from typing import TYPE_CHECKING
 from typing_extensions import override
 
+import numpy as np
+from torch.nn.attention.flex_attention import flex_attention, create_block_mask, BlockMask
+
+
 import torch
 from torch.utils.checkpoint import checkpoint
 
@@ -693,13 +697,51 @@ class MultiHeadAttention(Attention):
                     share_kv_across_n_heads,
                 )
 
+            # block_mask = None
+            # block_size = 32
+            
+            # if q.shape[1] == k.shape[1]:
+                
+            #     # print(f"Fixed Shape of Q: {q.shape}, Shape of K: {k.shape}")
+            
+            #     seq_len_q = q.transpose(1, 2).shape[2] 
+            #     seq_len_k = k.transpose(1, 2).shape[2] if k is not None else seq_len_q  
+                
+                
+                
+            #     def causal_mask(b, h, q_idx, kv_idx):
+            #         return q_idx < kv_idx
+                
+            #     num_blocks_q = seq_len_q // block_size
+
+            #     # print(f"Device: {k.device}")
+
+            #     block_mask = create_block_mask(causal_mask, 1, 1, seq_len_q, seq_len_q, device = k.device, BLOCK_SIZE = block_size)
+                
+               
+            # # print(f"Finished masking.")   
+            # if not block_mask :
+            #     print("block mask was skipped")
+              
+            # attention_head_outputs = flex_attention(
+            #     q.transpose(1, 2),
+            #     k.transpose(1, 2),
+            #     v.transpose(1, 2),
+            #     block_mask=block_mask,
+            #     # dropout_p=dropout_p,   NO DROPOUT??
+            #     **extra_inputs
+            #     )
+            
+            # del block_mask
+            
             attention_head_outputs = torch.nn.functional.scaled_dot_product_attention(
                 q.transpose(1, 2),
                 k.transpose(1, 2),
                 v.transpose(1, 2),
+                # attn_mask=attn_mask,
                 dropout_p=dropout_p,
                 **extra_inputs,
-            )
+            ).to(k.device)
             attention_head_outputs = attention_head_outputs.transpose(1, 2)
         else:
             k = MultiHeadAttention.broadcast_kv_across_heads(k, share_kv_across_n_heads)
