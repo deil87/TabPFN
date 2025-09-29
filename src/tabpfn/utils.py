@@ -114,7 +114,7 @@ def get_embeddings(
         embed = output_dict[selected_data].squeeze(1)
         assert isinstance(config, (ClassifierEnsembleConfig, RegressorEnsembleConfig))
         assert embed.ndim == 2
-        embeddings.append(embed.squeeze().cpu().numpy())
+        embeddings.append(embed.squeeze().detach().cpu().numpy())
 
     return np.array(embeddings)
 
