@@ -468,7 +468,27 @@ class EnsembleConfig:
         featshifts = rng.choice(featshifts, size=n, replace=False)  # type: ignore
 
         subsamples: list[None] | list[np.ndarray]
-        if isinstance(subsample_size, (int, float)):
+        if max_index > 10000:
+            subsample_size = 5000
+            chunk_size = 5000
+            N = max_index // chunk_size 
+            if max_index % chunk_size != 0:
+                N += 1
+                
+            print(f"max_index {max_index} is larger than 10000, generating {N} subsamples of size {chunk_size}")
+            indices_chunks = [range(i, min(i + chunk_size, max_index)) for i in range(0, max_index, chunk_size)]
+            print(f"indices_chunks: {indices_chunks}")
+            indices_chunks = [np.array(chunk) for chunk in indices_chunks]
+            leftover_n = n - len(indices_chunks)
+            leftover_subsamples = generate_index_permutations(
+                n=leftover_n,
+                max_index=max_index,
+                subsample=subsample_size,
+                random_state=static_seed,
+            )
+            subsamples = indices_chunks + leftover_subsamples
+            print(f"Generated {len(subsamples)} subsamples for {n} ensemble members. {len(indices_chunks)}  {len(leftover_subsamples)}")
+        elif isinstance(subsample_size, (int, float)):
             subsamples = generate_index_permutations(
                 n=n,
                 max_index=max_index,
@@ -642,6 +662,24 @@ def fit_preprocessing_one(
     if not isinstance(X_train, torch.Tensor):
         X_train = X_train.copy()
         y_train = y_train.copy()
+        
+    max_num_samples = 20000
+    max_num_features = 1000
+    if X_train.shape[1] > max_num_features:
+        raise ValueError(
+            f"Number of features {X_train.shape[1]} in the input data is greater than "
+            f"the maximum number of features {max_num_features} officially "
+            "supported by the TabPFN model. Set `ignore_pretraining_limits=True` "
+            "to override this error!",
+        )
+    if X_train.shape[0] > max_num_samples:
+        print(f"config.subsample_ix: {config.subsample_ix}")
+        raise ValueError(
+            f"Number of samples {X_train.shape[0]} in the input data is greater than "
+            f"the maximum number of samples {max_num_samples} officially supported"
+            f" by TabPFN. Set `ignore_pretraining_limits=True` to override this "
+            f"error!",
+        )
 
     preprocessor = config.to_pipeline(random_state=static_seed)
     res = preprocessor.fit_transform(X_train, cat_ix)
