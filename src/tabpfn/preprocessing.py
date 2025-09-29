@@ -579,7 +579,7 @@ class EnsembleConfig:
                 random_state=random_state,
             ),
         )
-        if isinstance(self.preprocess_config.remove_higly_correlated, bool):
+        if isinstance(self.preprocess_config.remove_higly_correlated, bool) and self.preprocess_config.remove_higly_correlated:
             print("Removing highly correlated features with threshold 0.95")
             steps.append(
                 RemoveHighlyCorrelatedFeaturesStep(
@@ -590,6 +590,7 @@ class EnsembleConfig:
             assert 0 < self.preprocess_config.remove_higly_correlated < 1, (
                 "If float, remove_higly_correlated must be in (0, 1)"
             )
+            print(f"Removing highly correlated features with custom threshold {self.preprocess_config.remove_higly_correlated}")
             steps.append(
                 RemoveHighlyCorrelatedFeaturesStep(
                     threshold=self.preprocess_config.remove_higly_correlated
