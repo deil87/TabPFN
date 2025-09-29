@@ -658,7 +658,7 @@ def fit_preprocessing_one(
         y_train = y_train.copy()
         
     max_num_samples = 20000
-    max_num_features = 1000
+    max_num_features = 1500
     if X_train.shape[1] > max_num_features:
         raise ValueError(
             f"Number of features {X_train.shape[1]} in the input data is greater than "
