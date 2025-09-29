@@ -353,6 +353,10 @@ def test_remove_highly_correlated():
     # Add different noise to each column based on noise_scales
     X = base_col + noise
 
+    # To test also negative correlations, randomly flip the sign of some columns
+    # Generate random boolean mask for columns to flip signs (e.g., 50% chance)
+    mask = np.random.rand(n_features) < 0.5
+    X [:, mask] *= -1
 
     # ARRANGE: Instantiate the transformer with the Generator object
     # This is the exact condition that caused the bug

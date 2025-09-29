@@ -63,11 +63,15 @@ class RemoveHighlyCorrelatedFeaturesStep(FeaturePreprocessingTransformerStep):
 
         for idx, vector in enumerate(vectors) :
             if idx not in indices_to_skip:
-                vector = vector.reshape(1, -1)
+                query = vector.reshape(1, -1)
+                
+                negated_query = -query
+                queries = np.vstack((query, negated_query))
                 # Perform range search to find all columns with similarity >= threshold
-                lims, distances, labels = index.range_search(vector, thresh = self.threshold)
-           
-                similar_indices = labels[1:]
+                _, _, labels = index.range_search(query, thresh = self.threshold)
+                _, _, labels_neg = index.range_search(negated_query, thresh = self.threshold)
+                all_labels = np.concatenate((labels, labels_neg))
+                similar_indices = all_labels[all_labels != idx]
                 index.remove_ids(similar_indices)
                 indices_to_skip.update(similar_indices.tolist())
 
