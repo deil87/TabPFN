@@ -34,6 +34,7 @@ from tabpfn.preprocessors import (
     NanHandlingPolynomialFeaturesStep,
     RemoveConstantFeaturesStep,
     ReshapeFeatureDistributionsStep,
+    RemoveHighlyCorrelatedFeaturesStep,
     SequentialFeatureTransformer,
     ShuffleFeaturesStep,
 )
@@ -178,6 +179,7 @@ class PreprocessorConfig:
     subsample_features: float = -1
     global_transformer_name: str | None = None
     differentiable: bool = False
+    remove_higly_correlated: bool = False
 
     @override
     def __str__(self) -> str:
@@ -228,6 +230,7 @@ class PreprocessorConfig:
             subsample_features=config_dict["subsample_features"],
             global_transformer_name=config_dict["global_transformer_name"],
             differentiable=config_dict.get("differentiable", False),
+            remove_higly_correlated=config_dict.get("remove_higly_correlated", False),
         )
 
 
@@ -576,6 +579,13 @@ class EnsembleConfig:
                 random_state=random_state,
             ),
         )
+        if self.preprocess_config.remove_higly_correlated:
+            print("Removing highly correlated features with threshold 0.9")
+            steps.append(
+                RemoveHighlyCorrelatedFeaturesStep(
+                    threshold=0.95
+                ),
+            )
         return SequentialFeatureTransformer(steps)
 
 
