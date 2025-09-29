@@ -16,6 +16,7 @@ dependencies = [
   "pydantic>=2.8.0",
   "pydantic-settings>=2.10.1",
   "faiss-cpu>=1.12.0",
+  #"faiss-gpu-cu12>=1.12.0",
   # eval-type-backport is required on Python 3.9 to enable support for "X | Y" notation
   # for union types in Pydantic.
   # Once Python 3.10 is the minimum version, this can be removed.
@@ -78,7 +79,7 @@ dev = [
   "ruff==0.8.6", # This version must be the same as in .pre-commit-config.yaml
   "mypy==1.17.1", # This version must be the same as in .pre-commit-config.yaml
   # Test
-  "pytest==8.0",
+  "pytest",
   "pytest-xdist",
   "pytest-mock>=3.14.1",
   "onnx", # required for onnx export tests

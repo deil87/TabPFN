@@ -179,7 +179,7 @@ class PreprocessorConfig:
     subsample_features: float = -1
     global_transformer_name: str | None = None
     differentiable: bool = False
-    remove_higly_correlated: bool = False
+    remove_higly_correlated: bool | float = False
 
     @override
     def __str__(self) -> str:
@@ -579,13 +579,23 @@ class EnsembleConfig:
                 random_state=random_state,
             ),
         )
-        if self.preprocess_config.remove_higly_correlated:
-            print("Removing highly correlated features with threshold 0.9")
+        if isinstance(self.preprocess_config.remove_higly_correlated, bool):
+            print("Removing highly correlated features with threshold 0.95")
             steps.append(
                 RemoveHighlyCorrelatedFeaturesStep(
                     threshold=0.95
                 ),
             )
+        elif isinstance(self.preprocess_config.remove_higly_correlated, float):
+            assert 0 < self.preprocess_config.remove_higly_correlated < 1, (
+                "If float, remove_higly_correlated must be in (0, 1)"
+            )
+            steps.append(
+                RemoveHighlyCorrelatedFeaturesStep(
+                    threshold=self.preprocess_config.remove_higly_correlated
+                ),
+            )
+            
         return SequentialFeatureTransformer(steps)
 
 
