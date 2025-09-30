@@ -40,16 +40,16 @@ y_train = y_train[upsample_indices]
 print(f"Original training size: {n_samples}")
 print(f"Upsampled training size: {y_train.shape[0]}")
 
-
+remove_higly_correlated = False
 preprocessing_configs = [
         PreprocessorConfig(
             "quantile_uni",
             append_original="auto",
             categorical_name="ordinal_very_common_categories_shuffled",
             global_transformer_name="svd",
-            remove_higly_correlated = True
+            remove_higly_correlated = remove_higly_correlated
         ),
-        PreprocessorConfig("safepower", categorical_name="onehot", remove_higly_correlated = True),
+        PreprocessorConfig("safepower", categorical_name="onehot", remove_higly_correlated = remove_higly_correlated),
     ]
 
 config_dict = {
@@ -70,14 +70,14 @@ print("Mean Absolute Error (MAE):", mean_absolute_error(y_test, predictions))
 print("R-squared (R^2):", r2_score(y_test, predictions))
 
 # Predict quantiles
-# quantiles = [0.25, 0.5, 0.75]
-# quantile_predictions = reg.predict(
-#     X_test,
-#     output_type="quantiles",
-#     quantiles=quantiles,
-# )
-# for q, q_pred in zip(quantiles, quantile_predictions):
-#     print(f"Quantile {q} MAE:", mean_absolute_error(y_test, q_pred))
-# # Predict with mode
-# mode_predictions = reg.predict(X_test, output_type="mode")
-# print("Mode MAE:", mean_absolute_error(y_test, mode_predictions))
+quantiles = [0.25, 0.5, 0.75]
+quantile_predictions = reg.predict(
+    X_test,
+    output_type="quantiles",
+    quantiles=quantiles,
+)
+for q, q_pred in zip(quantiles, quantile_predictions):
+    print(f"Quantile {q} MAE:", mean_absolute_error(y_test, q_pred))
+# Predict with mode
+mode_predictions = reg.predict(X_test, output_type="mode")
+print("Mode MAE:", mean_absolute_error(y_test, mode_predictions))
