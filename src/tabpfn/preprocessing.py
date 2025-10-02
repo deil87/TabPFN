@@ -470,7 +470,7 @@ class EnsembleConfig:
         featshifts = rng.choice(featshifts, size=n, replace=False)  # type: ignore
 
         subsamples: list[None] | list[np.ndarray]
-        if max_index > 10000:
+        if max_index > 5000:
             subsample_size = 5000
             chunk_size = 5000
             N = max_index // chunk_size 
