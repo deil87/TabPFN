@@ -367,6 +367,7 @@ class InferenceEngineBatchedNoPreprocessing(InferenceEngine):
             with (
                 torch.autocast(device.type, enabled=autocast),
                 torch.inference_mode(self.inference_mode),
+                torch.no_grad()
             ):
                 output = self.model(
                     train_x_full.transpose(0, 1),

@@ -54,7 +54,7 @@ class KDITransformerWithNaN(KDITransformer):
     ) -> KDITransformerWithNaN:
         """Fit the transformer."""
         if isinstance(X, torch.Tensor):
-            X = X.cpu().numpy()
+            X = X.detach().cpu().numpy()
 
         X = np.nan_to_num(X, nan=np.nanmean(X, axis=0))
         return super().fit(X, y)  # type: ignore
@@ -63,7 +63,7 @@ class KDITransformerWithNaN(KDITransformer):
         """Transform the data."""
         # if tensor convert to numpy
         if isinstance(X, torch.Tensor):
-            X = X.cpu().numpy()
+            X = X.detach().cpu().numpy()
 
         # Calculate the NaN mask for the current dataset
         nan_mask = np.isnan(X)

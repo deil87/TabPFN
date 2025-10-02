@@ -990,7 +990,7 @@ class TabPFNRegressor(RegressorMixin, BaseEstimator):
 
         check_is_fitted(self)
 
-        std_borders = self.znorm_space_bardist_.borders.cpu().numpy()
+        std_borders = self.znorm_space_bardist_.borders.detach().cpu().numpy()
         outputs: list[torch.Tensor] = []
         borders: list[np.ndarray] = []
 
@@ -1135,7 +1135,7 @@ def _logits_to_output(
 ) -> np.ndarray | list[np.ndarray]:
     """Converts raw model logits to the desired prediction format."""
     if output_type == "quantiles":
-        return [criterion.icdf(logits, q).cpu().detach().numpy() for q in quantiles]
+        return [criterion.icdf(logits, q).detach().cpu().numpy() for q in quantiles]
 
     # TODO: support
     #   "pi": criterion.pi(logits, np.max(self.y)),
@@ -1149,4 +1149,4 @@ def _logits_to_output(
     else:
         raise ValueError(f"Invalid output type: {output_type}")
 
-    return output.cpu().detach().numpy()
+    return output.detach().cpu().numpy()

@@ -345,16 +345,16 @@ def check_cpu_warning(
         return
 
     if any(device.type == "cpu" for device in devices):
-        if num_samples > 1000:
-            raise RuntimeError(
-                "Running on CPU with more than 1000 samples is not allowed "
-                "by default due to slow performance.\n"
-                "To override this behavior, set the environment variable "
-                "TABPFN_ALLOW_CPU_LARGE_DATASET=1 or "
-                "set ignore_pretraining_limits=True.\n"
-                "Alternatively, consider using a GPU or the tabpfn-client API: "
-                "https://github.com/PriorLabs/tabpfn-client"
-            )
+        # if num_samples > 1000:
+        #     raise RuntimeError(
+        #         "Running on CPU with more than 1000 samples is not allowed "
+        #         "by default due to slow performance.\n"
+        #         "To override this behavior, set the environment variable "
+        #         "TABPFN_ALLOW_CPU_LARGE_DATASET=1 or "
+        #         "set ignore_pretraining_limits=True.\n"
+        #         "Alternatively, consider using a GPU or the tabpfn-client API: "
+        #         "https://github.com/PriorLabs/tabpfn-client"
+        #     )
         if num_samples > 200:
             warnings.warn(
                 "Running on CPU with more than 200 samples may be slow.\n"
