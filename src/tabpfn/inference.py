@@ -270,6 +270,8 @@ class InferenceEngineOnDemand(InferenceEngine):
         )
 
         with get_autocast_context(device, enabled=autocast), torch.inference_mode():
+            model = torch.compile(model, mode="max-autotune")
+            print("Compiled model for inference")
             return model(
                 X_full,
                 y_train,
@@ -369,6 +371,8 @@ class InferenceEngineBatchedNoPreprocessing(InferenceEngine):
                 torch.inference_mode(self.inference_mode),
                 torch.no_grad()
             ):
+                self.model = torch.compile(self.model, mode="max-autotune")
+                print("Compiled model for inference")
                 output = self.model(
                     train_x_full.transpose(0, 1),
                     train_y_batch.transpose(0, 1),
@@ -553,6 +557,8 @@ class InferenceEngineCachePreprocessing(InferenceEngine):
             get_autocast_context(device, enabled=autocast),
             torch.inference_mode(self.inference_mode),
         ):
+            model = torch.compile(model, mode="max-autotune")
+            print("Compiled model for inference")
             return model(
                 X_full,
                 y_train,
