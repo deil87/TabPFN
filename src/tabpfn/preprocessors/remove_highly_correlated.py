@@ -1,4 +1,4 @@
-"""Remove Constant Features Step."""
+"""Remove Highly Correlated Features Step."""
 
 from __future__ import annotations
 
@@ -26,8 +26,7 @@ class RemoveHighlyCorrelatedFeaturesStep(FeaturePreprocessingTransformerStep):
     def __init__(
         self,
         *,
-        threshold: float = 0.98,
-        **kwargs: Any,
+        threshold: float = 0.98
         ) -> None:
         super().__init__()
         self.threshold = threshold
@@ -80,7 +79,7 @@ class RemoveHighlyCorrelatedFeaturesStep(FeaturePreprocessingTransformerStep):
 
         self.sel_ = sel_
 
-        # ACT: udnerstend better what to return here
+        # ACT: I would need some guidance here to understand how and what do we return from transformer steps.
         return [
             new_idx
             for new_idx, idx in enumerate(np.where(sel_)[0])
@@ -93,5 +92,4 @@ class RemoveHighlyCorrelatedFeaturesStep(FeaturePreprocessingTransformerStep):
     ) -> np.ndarray:
         assert self.sel_ is not None, "You must call fit first"
         X_transformed = X[:, self.sel_]
-        print(f"Reduced from {X.shape[1]} to {X_transformed.shape[1]} features")
         return X_transformed

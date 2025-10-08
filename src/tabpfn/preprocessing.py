@@ -13,6 +13,7 @@ from functools import partial
 from itertools import chain, product, repeat
 from typing import TYPE_CHECKING, Literal, TypeVar
 from typing_extensions import override
+import logging
 
 import joblib
 import numpy as np
@@ -179,7 +180,7 @@ class PreprocessorConfig:
     subsample_features: float = -1
     global_transformer_name: str | None = None
     differentiable: bool = False
-    remove_higly_correlated: bool | float = False
+    remove_highly_correlated: bool | float = False
 
     @override
     def __str__(self) -> str:
@@ -230,7 +231,7 @@ class PreprocessorConfig:
             subsample_features=config_dict["subsample_features"],
             global_transformer_name=config_dict["global_transformer_name"],
             differentiable=config_dict.get("differentiable", False),
-            remove_higly_correlated=config_dict.get("remove_higly_correlated", False),
+            remove_highly_correlated=config_dict.get("remove_highly_correlated", False),
         )
 
 
@@ -579,21 +580,22 @@ class EnsembleConfig:
                 random_state=random_state,
             ),
         )
-        if isinstance(self.preprocess_config.remove_higly_correlated, bool) and self.preprocess_config.remove_higly_correlated:
-            print("Removing highly correlated features with threshold 0.95")
+        
+        remove_corr = self.preprocess_config.remove_highly_correlated
+        threshold = None
+        if remove_corr is True:
+            threshold = 0.95
+        elif isinstance(remove_corr, float):
+            if not 0 < remove_corr < 1:
+                raise ValueError(
+                    "If float, remove_highly_correlated must be in (0, 1)"
+                )
+            threshold = remove_corr
+        if threshold is not None:
+            logging.info(f"Removing highly correlated features with threshold {threshold}")
             steps.append(
                 RemoveHighlyCorrelatedFeaturesStep(
-                    threshold=0.95
-                ),
-            )
-        elif isinstance(self.preprocess_config.remove_higly_correlated, float):
-            assert 0 < self.preprocess_config.remove_higly_correlated < 1, (
-                "If float, remove_higly_correlated must be in (0, 1)"
-            )
-            print(f"Removing highly correlated features with custom threshold {self.preprocess_config.remove_higly_correlated}")
-            steps.append(
-                RemoveHighlyCorrelatedFeaturesStep(
-                    threshold=self.preprocess_config.remove_higly_correlated
+                    threshold=threshold
                 ),
             )
             

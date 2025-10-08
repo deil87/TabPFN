@@ -40,16 +40,16 @@ y_train = y_train[upsample_indices]
 print(f"Original training size: {n_samples}")
 print(f"Upsampled training size: {y_train.shape[0]}")
 
-remove_higly_correlated = False
+remove_highly_correlated = False
 preprocessing_configs = [
         PreprocessorConfig(
             "quantile_uni",
             append_original="auto",
             categorical_name="ordinal_very_common_categories_shuffled",
             global_transformer_name="svd",
-            remove_higly_correlated = remove_higly_correlated
+            remove_highly_correlated = remove_highly_correlated
         ),
-        PreprocessorConfig("safepower", categorical_name="onehot", remove_higly_correlated = remove_higly_correlated),
+        PreprocessorConfig("safepower", categorical_name="onehot", remove_highly_correlated = remove_highly_correlated),
     ]
 
 config_dict = {
